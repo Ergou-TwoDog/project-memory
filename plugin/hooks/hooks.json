@@ -1,14 +1,14 @@
 {
   "hooks": {
     "SessionStart": [{
-      "hooks": [{ "type": "command", "command": "uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory-hook", "timeout": 180 }]
+      "hooks": [{ "type": "command", "command": "uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-memory-hook", "timeout": 180 }]
     }],
     "UserPromptSubmit": [{
-      "hooks": [{ "type": "command", "command": "uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory-hook", "timeout": 180 }]
+      "hooks": [{ "type": "command", "command": "uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-memory-hook", "timeout": 180 }]
     }],
     "PostToolUse": [{
       "matcher": "Bash",
-      "hooks": [{ "type": "command", "command": "uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory-hook", "timeout": 180 }]
+      "hooks": [{ "type": "command", "command": "uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-memory-hook", "timeout": 180 }]
     }]
   }
 }

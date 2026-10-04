@@ -41,12 +41,12 @@ claude --plugin-dir /path/to/project-memory/plugin
 
 ```bash
 cd /path/to/your-project
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory init
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-memory init
 ```
 
 插件内部的 `.mcp.json` / `hooks.json` 用的是**同一个 git 源**，所以装完即可用，无需其他配置。
 
-> **已钉版本**：插件内部的 `.mcp.json` / `hooks.json` 与上面的命令都钉在 `@v0.1.1`，
+> **已钉版本**：插件内部的 `.mcp.json` / `hooks.json` 与上面的命令都钉在 `@v0.1.2`，
 > 所以上游对 `main` 的改动**不会**影响使用者。发新版时：打新 tag → 更新这些引用里的版本号 → 重新安装插件。
 
 初始化后**建议**把 `.project-memory/` 加进 `.gitignore`（本工具**不会**替你改 `.gitignore`）。
@@ -63,9 +63,9 @@ uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-mem
 ## CLI（只有人跑）
 
 ```bash
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory status
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory adopt <intent_id>
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory drop  <intent_id>
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-memory status
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-memory adopt <intent_id>
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-memory drop  <intent_id>
 ```
 
 （`CLAUDE_PROJECT_DIR` 已设时自动使用；否则用 `--project <路径>`。）
