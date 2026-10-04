@@ -41,12 +41,12 @@ claude --plugin-dir /path/to/project-memory/plugin
 
 ```bash
 cd /path/to/your-project
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.0 project-memory init
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory init
 ```
 
 插件内部的 `.mcp.json` / `hooks.json` 用的是**同一个 git 源**，所以装完即可用，无需其他配置。
 
-> **已钉版本**：插件内部的 `.mcp.json` / `hooks.json` 与上面的命令都钉在 `@v0.1.0`，
+> **已钉版本**：插件内部的 `.mcp.json` / `hooks.json` 与上面的命令都钉在 `@v0.1.1`，
 > 所以上游对 `main` 的改动**不会**影响使用者。发新版时：打新 tag → 更新这些引用里的版本号 → 重新安装插件。
 
 初始化后**建议**把 `.project-memory/` 加进 `.gitignore`（本工具**不会**替你改 `.gitignore`）。
@@ -63,9 +63,9 @@ uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.0 project-mem
 ## CLI（只有人跑）
 
 ```bash
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.0 project-memory status
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.0 project-memory adopt <intent_id>
-uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.0 project-memory drop  <intent_id>
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory status
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory adopt <intent_id>
+uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.1 project-memory drop  <intent_id>
 ```
 
 （`CLAUDE_PROJECT_DIR` 已设时自动使用；否则用 `--project <路径>`。）
@@ -119,7 +119,8 @@ hook 每次 Bash 调用都会跑，所以它**不能拉 mcp**。因此：
 - **没有记录 ≠ 没有发生。** 记忆只覆盖观察到的内容，注入文本里始终带这句。
 - hook 只在**已初始化**的项目里工作；未初始化/非 git 目录**安静跳过，绝不建目录**。
 - 只观察目标仓的 reflog，**不改动、不提交**你的仓库。
-- 首次见到某个仓库时只**设基线**，不回填历史提交；历史被改写（rebase 等）时不猜"哪些是新的"。
+- 首次见到**已有历史**的仓库时只设基线、不回填旧提交；**新建的空仓库**则会记录它的**第一次提交**。
+  历史被改写（rebase 等）时不猜"哪些是新的"。
 - 投递有 token 预算，超限会**显式**标注省略了多少行，不静默截断。
 - 不是面对恶意并发/多写者的安全沙箱；`.project-memory/` 需要备份，工具不会自动迁移或删除。
 - 不提供跨项目聚合、云同步、向量检索。
