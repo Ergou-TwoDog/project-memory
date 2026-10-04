@@ -81,22 +81,26 @@ def observe(store, event):
 
 def _commits(store):
     root = store.project
-    current = head(root)
-    if current is None:
-        return []                       # unborn repository: nothing to observe, no error
-    entries = reflog(root)
-    if not entries:
-        return []                       # no reflog yet (fresh repo): stay quiet
-    top = entries[0][0]
+    entries = reflog(root) or []
+    current = head(root)                # None while the repository is unborn
+    top = entries[0][0] if entries else None
     marker = store.observer()
-    if marker is None or marker.get('reflog') != top or marker.get('head') != current:
+    if marker is None:
+        # First sighting: record the current position and report nothing, so an
+        # existing history is never backfilled. An unborn repository records
+        # None -- otherwise its first commit would become the baseline and be lost.
         store.set_observer({'head': current, 'reflog': top})
-    if marker is None or not marker.get('reflog'):
-        return []                       # first sighting: baseline only
-    shas = [sha for sha, _ in entries]
-    if marker['reflog'] not in shas:
-        return []                       # history rewritten: do not guess what is new
-    fresh = entries[:shas.index(marker['reflog'])]
+        return []
+    if marker.get('head') != current or marker.get('reflog') != top:
+        store.set_observer({'head': current, 'reflog': top})
+    previous = marker.get('reflog')
+    if previous is None:
+        fresh = entries                  # nothing had been committed when we last looked
+    else:
+        shas = [sha for sha, _ in entries]
+        if previous not in shas:
+            return []                    # history rewritten: do not guess what is new
+        fresh = entries[:shas.index(previous)]
     result = []
     for sha, subject in reversed(fresh):        # oldest first
         if not subject.startswith(COMMIT_PREFIXES):

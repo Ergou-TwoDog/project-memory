@@ -88,6 +88,17 @@ class CaptureTests(Base):
         store = Store.init(self.root)
         self.assertEqual(capture.observe(store, self.event()), [])      # no HEAD: no crash, no record
 
+    def test_first_commit_on_a_fresh_repository_is_recorded(self):
+        """An unborn repo must baseline at 'unborn', not at the first commit --
+        otherwise that commit is silently swallowed."""
+        store = Store.init(self.root)
+        self.assertEqual(capture.observe(store, self.event()), [])
+        self.assertIsNotNone(store.observer())          # baseline recorded while still unborn
+        sha = self.commit('a.txt', '第一条')
+        rows = capture.observe(store, self.event())
+        self.assertEqual([o.commit for o in rows], [sha])
+        self.assertEqual(rows[0].message, '第一条')
+
     def test_first_sighting_baselines_then_records_new_commits(self):
         self.commit('a.txt', 'first')
         store = Store.init(self.root)
