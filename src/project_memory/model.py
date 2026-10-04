@@ -8,7 +8,7 @@ from dataclasses import dataclass, fields
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-OBSERVATION_KINDS = ('commit', 'session_start', 'session_end')
+OBSERVATION_KINDS = ('commit', 'session_start', 'session_end', 'failure')
 INTENT_STATUS = ('candidate', 'adopted', 'dropped')
 INTENT_ORIGIN = ('llm', 'user')
 
@@ -83,6 +83,9 @@ class Observation:
     commit: str | None = None
     files_changed: tuple = ()
     message: str | None = None
+    command: str | None = None
+    exit_code: int | None = None
+    error: str | None = None
 
     def __post_init__(self):
         if not self.id:
@@ -101,6 +104,18 @@ class Observation:
                 raise MemoryError('full lowercase commit hash required')
         object.__setattr__(self, 'files_changed', _strings(self.files_changed, 'files_changed', maximum=512))
         optional_text(self.message, 'message')
+        if self.kind == 'commit':
+            if self.commit is None:
+                raise MemoryError('commit observation requires a commit')
+        elif self.commit is not None or self.files_changed:
+            raise MemoryError('only commit observations carry commit details')
+        if self.kind == 'failure':
+            if type(self.exit_code) is not int:
+                raise MemoryError('failure observation requires an integer exit code')
+            text(self.command, 'command', maximum=1000)
+            optional_text(self.error, 'error', maximum=1000)
+        elif self.command is not None or self.exit_code is not None or self.error is not None:
+            raise MemoryError('only failure observations carry command details')
 
     def to_dict(self):
         return {f.name: getattr(self, f.name) for f in fields(self)}

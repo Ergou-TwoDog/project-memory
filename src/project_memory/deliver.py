@@ -7,6 +7,7 @@ from . import intent as intent_layer
 
 BUDGET = 1600
 RECENT = 8
+FAILURES = 3
 CANDIDATES = 6
 
 TRIGGERS = ('状态', '进展', '做过', '做了什么', '为什么', '记录', '历史', '之前', '记得', '回想',
@@ -22,6 +23,8 @@ def _observation_line(o):
         label = (o.commit or '')[:8]
         files = f'，{len(o.files_changed)} 个文件' if o.files_changed else ''
         return f'- {o.at} commit {label}: {o.message or "(no message)"}{files}'
+    if o.kind == 'failure':
+        return f'- {o.at} 失败 exit={o.exit_code}: {o.command[:160]}'
     return f'- {o.at} {o.kind}'
 
 
@@ -39,13 +42,19 @@ def _fit(lines, budget):
 
 def render(store, budget=BUDGET):
     """Full digest: recent observations, unconfirmed candidates, adopted intentions."""
-    observations = store.observations(limit=RECENT)
+    observations = store.observations()
     intents = store.intents()
+    work = [o for o in observations if o.kind != 'failure'][-RECENT:]
+    failures = [o for o in observations if o.kind == 'failure'][-FAILURES:]
     lines = [HEADER]
-    if observations:
+    if work:
         lines.append('')
         lines.append('最近观察（可从 git 复现）:')
-        lines.extend(_observation_line(o) for o in observations)
+        lines.extend(_observation_line(o) for o in work)
+    if failures:
+        lines.append('')
+        lines.append('最近的失败（事实，不是结论）:')
+        lines.extend(_observation_line(o) for o in failures)
     pending = intent_layer.candidates(store)[-CANDIDATES:]
     if pending:
         lines.append('')

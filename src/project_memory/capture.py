@@ -87,9 +87,46 @@ def observe(store, event):
         return [Observation(kind='session_start', cwd=str(store.project), source=origin)]
     if name in ('SessionEnd', 'Stop'):
         return [Observation(kind='session_end', cwd=str(store.project), source=origin)]
-    if name != 'PostToolUse' or event.get('tool_name') != 'Bash':
+    if event.get('tool_name') != 'Bash':
+        return []
+    if name == 'PostToolUseFailure':
+        return _failure(store, event)
+    if name != 'PostToolUse':
         return []
     return _commits(store)
+
+
+def _parse_exit(error):
+    """Claude Code reports a failed command as 'Exit code N\\n<detail>'."""
+    if type(error) is not str or not error:
+        return None, None
+    head, _, detail = error.partition('\n')
+    if not head.startswith('Exit code '):
+        return None, None
+    try:
+        return int(head[len('Exit code '):].strip()), detail.strip()
+    except ValueError:
+        return None, None
+
+
+def _failure(store, event):
+    if event.get('is_interrupt'):
+        return []                       # the user stopping a command is not a failure
+    tool_input = event.get('tool_input')
+    command = tool_input.get('command') if type(tool_input) is dict else None
+    if type(command) is not str or not command.strip():
+        return []
+    exit_code, detail = _parse_exit(event.get('error'))
+    if exit_code is None:
+        return []                       # no exit code reported: do not invent one
+    command = command.strip()[:1000]
+    last = store.observations(limit=1)
+    if last and last[-1].kind == 'failure' and last[-1].command == command \
+            and last[-1].exit_code == exit_code:
+        return []                       # the same command failing again adds nothing
+    return [Observation(kind='failure', cwd=str(store.project), source='hook:PostToolUseFailure',
+                        command=command, exit_code=exit_code,
+                        error=(detail[:1000] or None))]
 
 
 def _commits(store):

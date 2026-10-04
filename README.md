@@ -56,9 +56,22 @@ uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-mem
 初始化之后没有额外步骤：
 
 - 你正常提交 → hook 自动记一条**观察**（提交号、变更文件、提交信息）
+- **命令失败** → hook 自动记一条**失败观察**（命令、退出码、错误摘要）
 - 会话开始 / 你问"这个项目最近怎么样了" → hook 自动**注入**记忆摘要
 - 模型想提方向 → 调 `propose_intent` 存为**候选**
 - 你决定采纳 → 在终端 `adopt`
+
+### 自动记录什么（只有两类）
+
+| 触发 | 记什么 |
+|---|---|
+| 会话开始 | `session_start` |
+| 会话里出现**新提交** | `commit`（提交号 / 变更文件 / 信息） |
+| 会话里**命令非零退出** | `failure`（命令 / 退出码 / 错误摘要） |
+
+**不记**：非 Bash 的工具调用、`git status` 这类无提交的命令、checkout/reset/rebase、
+会话外的提交、未初始化的项目。失败观察还会跳过**用户主动打断**的命令，以及
+**退出码解析不出来**的情况（不编造），并且相同命令+相同退出码的连续重复只记一次。
 
 ## CLI（只有人跑）
 
@@ -86,7 +99,7 @@ uvx --from git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2 project-mem
 存储在 `<项目>/.project-memory/`，追加式 JSONL，纯本地：
 
 ```
-observations.jsonl   # 观察，可从 git 重放
+observations.jsonl   # 观察：commit / session_start / failure，可从 git 复现
 intents.jsonl        # 意图，带 origin（llm / user）与 status
 observer.json        # reflog 基线，用于判断"哪些提交是新的"
 ```

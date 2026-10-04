@@ -76,6 +76,16 @@ class StoreTests(Base):
         with self.assertRaisesRegex(MemoryError, 'already'):
             intent_layer.decide(store, candidate.id, 'dropped')
 
+    def test_failure_observation_requires_command_details(self):
+        with self.assertRaisesRegex(MemoryError, 'failure observation requires'):
+            Observation(kind='failure', cwd='x', source='t')
+        with self.assertRaisesRegex(MemoryError, 'command: nonempty'):
+            Observation(kind='failure', cwd='x', source='t', exit_code=1)
+        with self.assertRaisesRegex(MemoryError, 'only failure observations'):
+            Observation(kind='session_start', cwd='x', source='t', command='ls')
+        with self.assertRaisesRegex(MemoryError, 'only commit observations'):
+            Observation(kind='session_start', cwd='x', source='t', commit='a' * 40)
+
     def test_strict_json_rejects_duplicate_keys(self):
         store = Store.init(self.root)
         (store.root / 'observations.jsonl').write_text('{"kind":"commit","kind":"commit"}\n', encoding='utf-8')
@@ -136,6 +146,36 @@ class CaptureTests(Base):
         started = capture.observe(store, self.event(name='SessionStart'))
         self.assertEqual([o.kind for o in started], ['session_start'])
 
+    def failure_event(self, **extra):
+        event = {'hook_event_name': 'PostToolUseFailure', 'tool_name': 'Bash',
+                 'cwd': str(self.root), 'tool_input': {'command': 'pytest -q'},
+                 'error': 'Exit code 1\n3 failed', 'is_interrupt': False}
+        event.update(extra)
+        return event
+
+    def test_failure_is_captured_with_command_and_exit_code(self):
+        store = Store.init(self.root)
+        rows = capture.observe(store, self.failure_event())
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0].kind, rows[0].command, rows[0].exit_code, rows[0].error),
+                         ('failure', 'pytest -q', 1, '3 failed'))
+
+    def test_interrupted_command_is_not_a_failure(self):
+        store = Store.init(self.root)
+        self.assertEqual(capture.observe(store, self.failure_event(is_interrupt=True)), [])
+
+    def test_failure_without_an_exit_code_is_not_invented(self):
+        store = Store.init(self.root)
+        self.assertEqual(capture.observe(store, self.failure_event(error='something broke')), [])
+
+    def test_repeated_identical_failure_is_not_duplicated(self):
+        store = Store.init(self.root)
+        for observation in capture.observe(store, self.failure_event()):
+            store.add_observation(observation)
+        self.assertEqual(capture.observe(store, self.failure_event()), [])
+        other = capture.observe(store, self.failure_event(error='Exit code 2\nboom'))
+        self.assertEqual([o.exit_code for o in other], [2])
+
 
 class DeliverTests(Base):
     def test_render_marks_candidates_and_unknown(self):
@@ -148,6 +188,15 @@ class DeliverTests(Base):
         self.assertIn('[候选]', text)
         self.assertIn('未知', text)
         self.assertIn('不得当作已定方向', text)
+
+    def test_render_shows_recent_failures(self):
+        store = Store.init(self.root)
+        store.add_observation(Observation(kind='failure', cwd=str(self.root), source='t',
+                                          command='pytest -q', exit_code=1, error='3 failed'))
+        text = deliver.render(store)
+        self.assertIn('最近的失败', text)
+        self.assertIn('pytest -q', text)
+        self.assertIn('exit=1', text)
 
     def test_budget_is_explicit_and_bounded(self):
         store = Store.init(self.root)
