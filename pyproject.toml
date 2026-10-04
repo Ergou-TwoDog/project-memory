@@ -7,6 +7,8 @@ name = "project-memory"
 version = "0.1.0"
 description = "Long-term project memory for LLMs: reproducible observations from Git, human-adopted intentions."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 # Core is standard-library only: hooks and the CLI must stay cheap.
 # Only the MCP server needs the SDK, so it is an optional extra.
