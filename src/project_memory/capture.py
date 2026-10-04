@@ -66,11 +66,24 @@ def commit_message(root, commit):
     return out.strip() if out else ''
 
 
+def ensure_baseline(store):
+    """First sighting only: remember where the repository stands, so commits made
+    afterwards count as new. An unborn repository records null -- that is what lets
+    its first commit be observed instead of being mistaken for the baseline."""
+    if store.observer() is None:
+        entries = reflog(store.project) or []
+        store.set_observer({'head': head(store.project),
+                            'reflog': entries[0][0] if entries else None})
+
+
 def observe(store, event):
     """Return the observations this event produces. Empty means "nothing observed"."""
     name = event.get('hook_event_name')
     origin = f'hook:{name}'
     if name == 'SessionStart':
+        # A session is the first look at the repository in the common case, so the
+        # baseline is taken here: a commit later in the same session is then new.
+        ensure_baseline(store)
         return [Observation(kind='session_start', cwd=str(store.project), source=origin)]
     if name in ('SessionEnd', 'Stop'):
         return [Observation(kind='session_end', cwd=str(store.project), source=origin)]
@@ -81,16 +94,11 @@ def observe(store, event):
 
 def _commits(store):
     root = store.project
+    ensure_baseline(store)              # first sighting reports nothing
     entries = reflog(root) or []
     current = head(root)                # None while the repository is unborn
     top = entries[0][0] if entries else None
     marker = store.observer()
-    if marker is None:
-        # First sighting: record the current position and report nothing, so an
-        # existing history is never backfilled. An unborn repository records
-        # None -- otherwise its first commit would become the baseline and be lost.
-        store.set_observer({'head': current, 'reflog': top})
-        return []
     if marker.get('head') != current or marker.get('reflog') != top:
         store.set_observer({'head': current, 'reflog': top})
     previous = marker.get('reflog')
