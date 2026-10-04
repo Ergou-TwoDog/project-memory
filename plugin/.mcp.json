@@ -4,7 +4,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/Ergou-TwoDog/project-memory@v0.1.2[mcp]",
+        "git+https://github.com/Ergou-TwoDog/project-memory@v0.2.0[mcp]",
         "project-memory-mcp"
       ]
     }
