@@ -1,0 +1,13 @@
+{
+  "name": "project-memory",
+  "owner": {
+    "name": "gouqa"
+  },
+  "plugins": [
+    {
+      "name": "project-memory",
+      "source": "./plugin",
+      "description": "Long-term project memory for LLMs: observations from Git, intentions from humans."
+    }
+  ]
+}

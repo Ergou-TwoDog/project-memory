@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "project-memory": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/Ergou-TwoDog/project-memory[mcp]",
+        "project-memory-mcp"
+      ]
+    }
+  }
+}

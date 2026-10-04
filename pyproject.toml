@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-memory"
+version = "0.1.0"
+description = "Long-term project memory for LLMs: reproducible observations from Git, human-adopted intentions."
+readme = "README.md"
+requires-python = ">=3.12"
+# Core is standard-library only: hooks and the CLI must stay cheap.
+# Only the MCP server needs the SDK, so it is an optional extra.
+dependencies = []
+keywords = ["mcp", "llm", "memory", "agent", "claude-code", "model-context-protocol"]
+authors = [{ name = "gouqa" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Repository = "https://github.com/Ergou-TwoDog/project-memory"
+
+[project.optional-dependencies]
+# Pinned below 2.x: the SDK renamed FastMCP to MCPServer there.
+mcp = ["mcp>=1.0,<2"]
+
+[project.scripts]
+project-memory = "project_memory.cli:main"
+project-memory-mcp = "project_memory.server:main"
+project-memory-hook = "project_memory.hook:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
